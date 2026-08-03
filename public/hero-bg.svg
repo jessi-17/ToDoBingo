@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400" fill="none" role="img" aria-label="Notebook frame background">
+  <defs>
+    <!-- subtle dotted grid for the page -->
+    <pattern id="pageDots" width="14" height="14" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#d9d9d9" opacity="0.55" />
+    </pattern>
+    <!-- clip the dots to the rounded page -->
+    <clipPath id="pageClip">
+      <rect x="50" y="66" width="700" height="284" rx="12" />
+    </clipPath>
+  </defs>
+
+  <!-- dark backdrop -->
+  <rect x="0" y="0" width="800" height="400" fill="#1b1b1b" />
+
+  <!-- pink outer frame -->
+  <rect x="18" y="18" width="764" height="364" rx="34" fill="#ff4f9a" />
+
+  <!-- red border (thicker band at top for the binding) -->
+  <rect x="34" y="34" width="732" height="332" rx="24" fill="#dc1f1f" />
+
+  <!-- white notepad page -->
+  <rect x="50" y="66" width="700" height="284" rx="12" fill="#ffffff" />
+  <rect x="50" y="66" width="700" height="284" rx="12" fill="url(#pageDots)" clip-path="url(#pageClip)" />
+
+  <!-- spiral binding rings across the top -->
+  <g>
+    <!-- capsules -->
+    <g fill="#ff6cae">
+      <rect x="61" y="10" width="13" height="50" rx="6.5" />
+      <rect x="115.5" y="10" width="13" height="50" rx="6.5" />
+      <rect x="170" y="10" width="13" height="50" rx="6.5" />
+      <rect x="224.5" y="10" width="13" height="50" rx="6.5" />
+      <rect x="279" y="10" width="13" height="50" rx="6.5" />
+      <rect x="333.5" y="10" width="13" height="50" rx="6.5" />
+      <rect x="388" y="10" width="13" height="50" rx="6.5" />
+      <rect x="442.5" y="10" width="13" height="50" rx="6.5" />
+      <rect x="497" y="10" width="13" height="50" rx="6.5" />
+      <rect x="551.5" y="10" width="13" height="50" rx="6.5" />
+      <rect x="606" y="10" width="13" height="50" rx="6.5" />
+      <rect x="660.5" y="10" width="13" height="50" rx="6.5" />
+      <rect x="715" y="10" width="13" height="50" rx="6.5" />
+    </g>
+    <!-- highlights -->
+    <g fill="#ff9cc8">
+      <rect x="65.5" y="14" width="4" height="42" rx="2" />
+      <rect x="120" y="14" width="4" height="42" rx="2" />
+      <rect x="174.5" y="14" width="4" height="42" rx="2" />
+      <rect x="229" y="14" width="4" height="42" rx="2" />
+      <rect x="283.5" y="14" width="4" height="42" rx="2" />
+      <rect x="338" y="14" width="4" height="42" rx="2" />
+      <rect x="392.5" y="14" width="4" height="42" rx="2" />
+      <rect x="447" y="14" width="4" height="42" rx="2" />
+      <rect x="501.5" y="14" width="4" height="42" rx="2" />
+      <rect x="556" y="14" width="4" height="42" rx="2" />
+      <rect x="610.5" y="14" width="4" height="42" rx="2" />
+      <rect x="665" y="14" width="4" height="42" rx="2" />
+      <rect x="719.5" y="14" width="4" height="42" rx="2" />
+    </g>
+  </g>
+</svg>

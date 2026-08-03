@@ -24,3 +24,329 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/*
+ * Idle drift for the wordmark sparkles, so they always look faintly alive.
+ * Applied to an inner group: the outer group owns the click-to-spin transform,
+ * and keeping the two on separate elements stops the animation and the spin
+ * fighting over the same property.
+ */
+@keyframes star-idle {
+  0%,
+  100% {
+    transform: rotate(-5deg) translateY(-0.6px);
+  }
+  50% {
+    transform: rotate(5deg) translateY(0.7px);
+  }
+}
+
+.star-idle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: star-idle 3s ease-in-out infinite;
+}
+
+/* Offset the other sparkles so the set never drifts in lockstep. */
+.star-idle-slow {
+  animation-duration: 4.1s;
+  animation-delay: -1.3s;
+}
+
+.star-idle-alt {
+  animation-duration: 3.5s;
+  animation-delay: -2.2s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .star-idle {
+    animation: none;
+  }
+}
+
+/*
+ * Loose sparkles on the paper. Far bigger than the wordmark's drift — these are
+ * meant to read as a jiggle, not a sway. Uses the standalone rotate/scale
+ * properties so the per-star tilt set inline is not overwritten.
+ */
+@keyframes star-jiggle {
+  0%,
+  100% {
+    rotate: -14deg;
+    scale: 0.92;
+  }
+  50% {
+    rotate: 14deg;
+    scale: 1.08;
+  }
+}
+
+.star-jiggle {
+  animation: star-jiggle var(--jiggle, 1.5s) ease-in-out infinite;
+  animation-delay: var(--jiggle-delay, 0s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .star-jiggle {
+    animation: none;
+  }
+}
+
+/*
+ * The chosen task bursting out of the middle of the page. Uses the standalone
+ * `scale` property rather than `transform`, so it composes with the centring
+ * translate instead of overwriting it.
+ */
+@keyframes task-pop {
+  0% {
+    scale: 0;
+    opacity: 0;
+  }
+  55% {
+    scale: 1.14;
+    opacity: 1;
+  }
+  74% {
+    scale: 0.96;
+  }
+  88% {
+    scale: 1.03;
+  }
+  100% {
+    scale: 1;
+    opacity: 1;
+  }
+}
+
+.task-pop {
+  animation: task-pop 700ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-pop {
+    animation-duration: 1ms;
+  }
+}
+
+/*
+ * Celebration confetti. Distances are in vh so a piece crosses the whole page
+ * whatever its own size, and each piece carries its own drift, spin and speed
+ * so the fall never looks like one synchronised sheet.
+ */
+@keyframes confetti-fall {
+  0% {
+    transform: translate3d(0, -14vh, 0) rotate(0deg);
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--drift, 0px), 116vh, 0)
+      rotate(var(--spin, 720deg));
+    opacity: 0;
+  }
+}
+
+@keyframes confetti-flutter {
+  0%,
+  100% {
+    scale: 1 1;
+  }
+  50% {
+    scale: 0.35 1;
+  }
+}
+
+.confetti {
+  animation: confetti-fall var(--fall, 5s) cubic-bezier(0.3, 0.5, 0.5, 1)
+    var(--delay, 0ms) forwards;
+  will-change: transform, opacity;
+}
+
+/* The inner sliver flips edge-on as it drops, so pieces read as paper. */
+.confetti-face {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: confetti-flutter var(--flutter, 700ms) ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confetti {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/*
+ * Striking a bingo square: a pencil runs back and forth over it, the scribble
+ * appearing under the tip, and once it is done a sheet of frosted glass settles
+ * over the square and seals it.
+ *
+ * The scribble is drawn by pulling back a dash gap the length of the whole
+ * path, so ink only exists where the tip has already been. `pathLength="100"`
+ * on the path makes 100 mean "all of it" whatever the real arc length is, so
+ * the timing does not have to be retuned when the shape of the scribble
+ * changes.
+ */
+@keyframes scribble-draw {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.scribble-draw {
+  stroke-dasharray: 100;
+  animation: scribble-draw var(--scribble-ms, 620ms) cubic-bezier(0.4, 0.1, 0.5, 1)
+    var(--scribble-delay, 0ms) both;
+}
+
+/*
+ * The pencil itself, carried along the very same path the scribble is drawn
+ * from — `offset-path` is given the identical `d`, so the tip and the end of
+ * the ink cannot drift apart however the scribble is redrawn. It fades out at
+ * the end rather than vanishing, so the hand reads as lifting away.
+ */
+@keyframes scribble-hand {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+.scribble-hand {
+  offset-rotate: 0deg;
+  offset-anchor: 50% 92%;
+  animation: scribble-hand var(--scribble-ms, 620ms) cubic-bezier(0.4, 0.1, 0.5, 1)
+    var(--scribble-delay, 0ms) both;
+}
+
+/* The glass only arrives once the scribbling has stopped. */
+@keyframes frost-settle {
+  from {
+    opacity: 0;
+    scale: 1.06;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+.frost-settle {
+  animation: frost-settle 420ms cubic-bezier(0.22, 0.9, 0.3, 1)
+    var(--frost-delay, 520ms) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scribble-draw,
+  .frost-settle {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
+
+  .scribble-hand {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/*
+ * Crossing a to-do off: the scribble is revealed left to right, as a hand
+ * would lay it down. A wipe rather than the dash animation above because these
+ * paths use `non-scaling-stroke` — which keeps the stroke from being stretched
+ * by the row's flattened viewBox, but puts the dash pattern in a different
+ * coordinate space from `pathLength`, so the two do not compose.
+ */
+@keyframes strike-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 -3% 0 0);
+  }
+}
+
+.strike-wipe {
+  animation: strike-wipe 340ms cubic-bezier(0.4, 0.1, 0.5, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .strike-wipe {
+    animation-duration: 1ms;
+  }
+}
+
+/* A text note being dropped onto the page. */
+@keyframes note-in {
+  from {
+    opacity: 0;
+    scale: 0.86;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+.note-in {
+  animation: note-in 220ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+
+/*
+ * An empty note has no height of its own to click back into, so it shows its
+ * prompt until the first character is typed. `:empty` is exact here — the note
+ * is a contentEditable whose text is its only child.
+ */
+[data-note]:empty::before {
+  content: attr(data-placeholder);
+  opacity: 0.35;
+}
+
+/*
+ * Themed scrollbar for the sticker drawer. The platform default is a chunky
+ * grey bar with stepper arrows that reads as a browser chrome rather than part
+ * of the drawer. Modern Chrome and Firefox honour the standard properties;
+ * the -webkit rules below are the fallback for older Chrome, which ignores
+ * `scrollbar-width` and would otherwise keep the default bar.
+ */
+.sticker-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #c8945a transparent;
+}
+
+.sticker-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sticker-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sticker-scroll::-webkit-scrollbar-thumb {
+  background: #c8945a;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.sticker-scroll::-webkit-scrollbar-button {
+  display: none;
+}
