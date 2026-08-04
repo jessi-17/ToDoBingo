@@ -67,6 +67,45 @@ export const setMuted = (next: boolean) => {
 let ctx: AudioContext | null = null;
 let noiseBuffer: AudioBuffer | null = null;
 
+/**
+ * Real recordings for the sounds worth being real — dropped into /public/sfx
+ * and decoded once into the same context the synth voices play through. Until
+ * a recording has loaded (or if it ever fails to), the synthesised version of
+ * the same sound plays instead, so nothing is ever silent.
+ */
+const SAMPLES = {
+  click: "/sfx/freesound_community-macbook-pro-touchpad-clicking-90343.mp3",
+  cdTray: "/sfx/freesound_community-opening-closing-cd-dvd-blu-ray-player-31074.mp3",
+  whistle: "/sfx/freesound_community-party-whistle-being-blown-79410.mp3",
+  pencil: "/sfx/freesound_community-pencil-29272.mp3",
+  eraser: "/sfx/freesound_community-pencil-eraser-erasing-71215.mp3",
+} as const;
+
+type SampleName = keyof typeof SAMPLES;
+
+const samples: Partial<Record<SampleName, AudioBuffer>> = {};
+let samplesRequested = false;
+
+const preloadSamples = (c: AudioContext) => {
+  if (samplesRequested) return;
+  samplesRequested = true;
+  (Object.keys(SAMPLES) as SampleName[]).forEach((name) => {
+    void fetch(SAMPLES[name])
+      .then((response) =>
+        response.ok
+          ? response.arrayBuffer()
+          : Promise.reject(new Error(String(response.status))),
+      )
+      .then((data) => c.decodeAudioData(data))
+      .then((buffer) => {
+        samples[name] = buffer;
+      })
+      .catch(() => {
+        /* missing or undecodable recording — the synth stands in forever */
+      });
+  });
+};
+
 const context = (): AudioContext | null => {
   if (typeof window === "undefined") return null;
   if (getSnapshot()) return null;
@@ -81,10 +120,69 @@ const context = (): AudioContext | null => {
     if (!ctx) ctx = new Ctor();
     // iOS parks the context until a gesture; every sound here is one.
     if (ctx.state === "suspended") void ctx.resume();
+    preloadSamples(ctx);
     return ctx;
   } catch {
     return null;
   }
+};
+
+/** Plays a recording if it has arrived. False means: use the synth instead. */
+const playSample = (
+  name: SampleName,
+  opts?: { gain?: number; rate?: number },
+): boolean => {
+  const c = context();
+  if (!c) return false;
+  const buffer = samples[name];
+  if (!buffer) return false;
+
+  const src = c.createBufferSource();
+  src.buffer = buffer;
+  if (opts?.rate) src.playbackRate.value = opts.rate;
+
+  const amp = c.createGain();
+  amp.gain.value = opts?.gain ?? 1;
+
+  src.connect(amp).connect(c.destination);
+  src.start();
+  return true;
+};
+
+/**
+ * A recording looped as a friction voice: loudness follows the hand's speed,
+ * and the playback rate leans with it, so the real pencil recording still
+ * hisses harder on a fast scribble.
+ */
+const sampleFriction = (name: SampleName, maxGain: number): Friction | null => {
+  const c = context();
+  if (!c) return null;
+  const buffer = samples[name];
+  if (!buffer) return null;
+
+  const src = c.createBufferSource();
+  src.buffer = buffer;
+  src.loop = true;
+
+  const amp = c.createGain();
+  amp.gain.value = 0.0001;
+
+  src.connect(amp).connect(c.destination);
+  src.start();
+
+  return {
+    move: (speed: number) => {
+      const t = c.currentTime;
+      const s = Math.min(Math.max(speed, 0), 1);
+      amp.gain.setTargetAtTime(maxGain * s, t, 0.05);
+      src.playbackRate.setTargetAtTime(0.85 + 0.4 * s, t, 0.08);
+    },
+    end: () => {
+      const t = c.currentTime;
+      amp.gain.setTargetAtTime(0.0001, t, 0.04);
+      src.stop(t + 0.3);
+    },
+  };
 };
 
 /** One second of white noise, built once — the raw material for paper. */
@@ -238,8 +336,11 @@ const BEADS = [523.25, 587.33, 659.25, 783.99, 880];
 
 // --- the sounds ------------------------------------------------------------
 export const sfx = {
-  /** The quiet dry tick under every button press. */
+  /** The quiet dry tick under every button press — a real touchpad click,
+      pitched slightly differently every time so it never sounds mechanical. */
   tick: () => {
+    if (playSample("click", { gain: 0.5, rate: 0.94 + Math.random() * 0.12 }))
+      return;
     tone({ freq: 1850 + Math.random() * 250, dur: 0.035, gain: 0.05 });
   },
 
@@ -287,9 +388,14 @@ export const sfx = {
     }
   },
 
-  /** Celebration, sized like the confetti itself is. */
+  /** Celebration, sized like the confetti itself is. A completed line earns
+      the real party whistle; a single task keeps the smaller synth pop. */
   confetti: (pieces: number) => {
     const big = pieces > 100;
+    if (big && playSample("whistle", { gain: 0.4 })) {
+      sfx.sparkle(6);
+      return;
+    }
     tone({ freq: 330, to: 560, dur: 0.1, gain: 0.12 });
     if (big) tone({ freq: 140, to: 70, dur: 0.16, gain: 0.14, delay: 0.02 });
     sfx.sparkle(big ? 8 : 4);
@@ -334,11 +440,20 @@ export const sfx = {
     scrub({ from: 4200, to: 2800, dur: 0.02, gain: 0.028 });
   },
 
-  /** Graphite on paper, alive for the length of the stroke. */
+  /** Graphite on paper, alive for the length of the stroke — the real
+      pencil recording when it has loaded, the synth hiss until then. */
   pencil: (): Friction | null =>
+    sampleFriction("pencil", 0.55) ??
     friction({ low: 2200, high: 5200, gain: 0.05, q: 0.7 }),
 
-  /** Rubber on paper: lower, rounder, with that faint catching squeak. */
+  /** Rubber on paper — the real eraser recording, synth squeak as fallback. */
   eraser: (): Friction | null =>
+    sampleFriction("eraser", 0.7) ??
     friction({ low: 260, high: 760, gain: 0.1, q: 1.3, squeak: 1050 }),
+
+  /** The disc sliding in or out — an actual CD tray. */
+  cdTray: () => {
+    if (playSample("cdTray", { gain: 0.5 })) return;
+    tone({ freq: 280, to: 540, dur: 0.09, gain: 0.11 });
+  },
 };
