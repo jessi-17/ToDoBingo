@@ -83,6 +83,28 @@ const SAMPLES = {
 
 type SampleName = keyof typeof SAMPLES;
 
+/**
+ * Where the useful sound lives inside each recording. These are long takes —
+ * seven seconds of clicking, a 55-second CD player session — and playing a
+ * file whole meant one tap rattled on for seconds. Offsets were measured by
+ * decoding each file and finding its loud bursts, not by ear alone.
+ */
+const CUTS: Record<
+  SampleName,
+  { offset: number; dur?: number; loopEnd?: number }
+> = {
+  // The first clean click of eleven.
+  click: { offset: 0.95, dur: 0.2 },
+  // The tray's mechanical run, out of nearly a minute of session.
+  cdTray: { offset: 2.2, dur: 1.3 },
+  // The first full blow; the file holds nine.
+  whistle: { offset: 0.25, dur: 1.9 },
+  // The longest continuous scribble, looped.
+  pencil: { offset: 5.3, loopEnd: 9.7 },
+  // A steady rubbing stretch, looped.
+  eraser: { offset: 9.06, loopEnd: 10.9 },
+};
+
 const samples: Partial<Record<SampleName, AudioBuffer>> = {};
 let samplesRequested = false;
 
@@ -127,7 +149,7 @@ const context = (): AudioContext | null => {
   }
 };
 
-/** Plays a recording if it has arrived. False means: use the synth instead. */
+/** Plays a recording's cut if it has arrived. False means: use the synth. */
 const playSample = (
   name: SampleName,
   opts?: { gain?: number; rate?: number },
@@ -137,15 +159,24 @@ const playSample = (
   const buffer = samples[name];
   if (!buffer) return false;
 
+  const cut = CUTS[name];
+  const dur = cut.dur ?? buffer.duration - cut.offset;
+
   const src = c.createBufferSource();
   src.buffer = buffer;
   if (opts?.rate) src.playbackRate.value = opts.rate;
 
+  // Eased in and out over the cut so slicing mid-take never pops.
+  const t = c.currentTime;
+  const gain = opts?.gain ?? 1;
   const amp = c.createGain();
-  amp.gain.value = opts?.gain ?? 1;
+  amp.gain.setValueAtTime(0.0001, t);
+  amp.gain.exponentialRampToValueAtTime(gain, t + 0.008);
+  amp.gain.setValueAtTime(gain, t + Math.max(dur - 0.08, 0.01));
+  amp.gain.linearRampToValueAtTime(0.0001, t + dur);
 
   src.connect(amp).connect(c.destination);
-  src.start();
+  src.start(t, cut.offset, dur);
   return true;
 };
 
@@ -160,15 +191,19 @@ const sampleFriction = (name: SampleName, maxGain: number): Friction | null => {
   const buffer = samples[name];
   if (!buffer) return null;
 
+  const cut = CUTS[name];
   const src = c.createBufferSource();
   src.buffer = buffer;
   src.loop = true;
+  // Loop only the steady stretch of the take, not its silences and fumbling.
+  src.loopStart = cut.offset;
+  src.loopEnd = cut.loopEnd ?? buffer.duration;
 
   const amp = c.createGain();
   amp.gain.value = 0.0001;
 
   src.connect(amp).connect(c.destination);
-  src.start();
+  src.start(c.currentTime, cut.offset);
 
   return {
     move: (speed: number) => {
@@ -392,7 +427,7 @@ export const sfx = {
       the real party whistle; a single task keeps the smaller synth pop. */
   confetti: (pieces: number) => {
     const big = pieces > 100;
-    if (big && playSample("whistle", { gain: 0.4 })) {
+    if (big && playSample("whistle", { gain: 0.55 })) {
       sfx.sparkle(6);
       return;
     }
@@ -443,17 +478,18 @@ export const sfx = {
   /** Graphite on paper, alive for the length of the stroke — the real
       pencil recording when it has loaded, the synth hiss until then. */
   pencil: (): Friction | null =>
-    sampleFriction("pencil", 0.55) ??
+    // The recording is faint (peaks near 0.04), so its gain runs well over 1.
+    sampleFriction("pencil", 2.0) ??
     friction({ low: 2200, high: 5200, gain: 0.05, q: 0.7 }),
 
   /** Rubber on paper — the real eraser recording, synth squeak as fallback. */
   eraser: (): Friction | null =>
-    sampleFriction("eraser", 0.7) ??
+    sampleFriction("eraser", 1.6) ??
     friction({ low: 260, high: 760, gain: 0.1, q: 1.3, squeak: 1050 }),
 
-  /** The disc sliding in or out — an actual CD tray. */
+  /** The disc sliding in or out — an actual CD tray, quietly recorded. */
   cdTray: () => {
-    if (playSample("cdTray", { gain: 0.5 })) return;
+    if (playSample("cdTray", { gain: 2.2 })) return;
     tone({ freq: 280, to: 540, dur: 0.09, gain: 0.11 });
   },
 };

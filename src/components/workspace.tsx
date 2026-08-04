@@ -103,7 +103,9 @@ export default function Workspace() {
    */
   const [burst, setBurst] = useState({ n: 0, pieces: 0 });
   const celebrate = (pieces: number) => {
-    sfx.confetti(pieces);
+    // Small bursts stay visual-only: completing one task already has its
+    // scribble, and a fanfare on top of it read as two competing sounds.
+    if (pieces > 100) sfx.confetti(pieces);
     setBurst((current) => ({ n: current.n + 1, pieces }));
   };
   // The pop-out is the moment of the reveal; the text on the right is what
@@ -558,7 +560,12 @@ export default function Workspace() {
         setSelected(null);
         // One delegated tick under every button on the page, so each control
         // answers the finger without every component carrying its own wiring.
-        if ((event.target as HTMLElement).closest("button")) sfx.tick();
+        // Card squares and done-checkboxes are exempt: their press already
+        // speaks as the scribble, and a click underneath it doubled the sound.
+        const pressed = (event.target as HTMLElement).closest("button");
+        if (pressed && !pressed.closest("[data-cell]") && !pressed.hasAttribute("aria-pressed")) {
+          sfx.tick();
+        }
       }}
       onKeyDown={(event) => {
         // Typewriter taps for typing, wherever the caret is — inputs and the
