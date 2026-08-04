@@ -40,10 +40,13 @@ const IDLE_CLASS: Record<StarName, string> = {
 export default function Wordmark({
   className = "",
   mobile = false,
+  style,
 }: {
   className?: string;
   /** On portrait, sized from the width — the height-derived scale runs wide. */
   mobile?: boolean;
+  /** For offsets that need calc() — the portrait layout's toolbar anchor. */
+  style?: React.CSSProperties;
 }) {
   // Derived from the star list rather than written out, so adding another
   // sparkle needs no change here.
@@ -64,10 +67,15 @@ export default function Wordmark({
     <div
       style={{
         ...(mobile
-          ? ({ "--s": "calc(62cqw / 514)" } as React.CSSProperties)
+          ? // Width-led, but never taller than the strip of paper between the
+            // card's bottom edge and the save-as row on a squat window.
+            ({
+              "--s": "min(calc(58cqw / 514), calc(11cqh / 170))",
+            } as React.CSSProperties)
           : scaleVars),
         width: s(514),
         height: s(170),
+        ...style,
       }}
       className={`absolute select-none ${className}`}
     >

@@ -861,10 +861,9 @@ export default function Workspace() {
       */}
       <Wordmark
         mobile={mobile}
+        style={mobile ? { bottom: `calc(${SHEET_BOTTOM} + 40px)` } : undefined}
         className={
-          mobile
-            ? "bottom-[18%] left-1/2 -translate-x-1/2"
-            : "left-[16.57%] top-[65.5%]"
+          mobile ? "left-1/2 -translate-x-1/2" : "left-[16.57%] top-[65.5%]"
         }
       />
 
