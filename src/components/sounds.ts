@@ -74,7 +74,6 @@ let noiseBuffer: AudioBuffer | null = null;
  * the same sound plays instead, so nothing is ever silent.
  */
 const SAMPLES = {
-  click: "/sfx/freesound_community-macbook-pro-touchpad-clicking-90343.mp3",
   cdTray: "/sfx/freesound_community-opening-closing-cd-dvd-blu-ray-player-31074.mp3",
   whistle: "/sfx/freesound_community-party-whistle-being-blown-79410.mp3",
   pencil: "/sfx/freesound_community-pencil-29272.mp3",
@@ -93,8 +92,6 @@ const CUTS: Record<
   SampleName,
   { offset: number; dur?: number; loopEnd?: number }
 > = {
-  // The first clean click of eleven.
-  click: { offset: 0.95, dur: 0.2 },
   // The tray's mechanical run, out of nearly a minute of session.
   cdTray: { offset: 2.2, dur: 1.3 },
   // The first full blow; the file holds nine.
@@ -371,11 +368,8 @@ const BEADS = [523.25, 587.33, 659.25, 783.99, 880];
 
 // --- the sounds ------------------------------------------------------------
 export const sfx = {
-  /** The quiet dry tick under every button press — a real touchpad click,
-      pitched slightly differently every time so it never sounds mechanical. */
+  /** The quiet dry tick under every button press. */
   tick: () => {
-    if (playSample("click", { gain: 0.5, rate: 0.94 + Math.random() * 0.12 }))
-      return;
     tone({ freq: 1850 + Math.random() * 250, dur: 0.035, gain: 0.05 });
   },
 
