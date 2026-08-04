@@ -257,6 +257,12 @@ export default function BingoCard({
          * because it was placed by hand and is meant to look placed.
          */
         const dropped = Boolean(cell.font);
+        /*
+         * Tasks share one print size until length forces smaller — a long
+         * task at the standard 14 runs out of square and gets clipped, and
+         * a record you cannot read back is not a record.
+         */
+        const taskSize = Math.min(CELL_TEXT.size, fitSize(label));
 
         return (
           <button
@@ -284,8 +290,9 @@ export default function BingoCard({
                * labels look fine while anything of real length runs out of
                * square.
                */
-              fontSize: u(dropped ? fitSize(label) : CELL_TEXT.size),
-              lineHeight: dropped ? 1.15 : u(CELL_TEXT.line),
+              fontSize: u(dropped ? fitSize(label) : taskSize),
+              lineHeight:
+                dropped || taskSize < CELL_TEXT.size ? 1.15 : u(CELL_TEXT.line),
               /*
                * The size buckets assume text wraps; a single unbroken "word"
                * has no space to wrap at and would walk straight out of the

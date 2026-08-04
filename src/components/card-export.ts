@@ -453,9 +453,13 @@ export async function renderCard(art: CardArt, scale = 2) {
     if (!cell.label) continue;
 
     // Label above the frost, exactly as on screen and for the same reason:
-    // this type is far too small to survive being blurred.
-    const size = dropped ? fitSize(cell.label) : CELL_TEXT.size;
-    const lineHeight = dropped ? size * 1.15 : CELL_TEXT.line;
+    // this type is far too small to survive being blurred. Tasks shrink with
+    // length past the standard size, exactly as the live card does.
+    const size = dropped
+      ? fitSize(cell.label)
+      : Math.min(CELL_TEXT.size, fitSize(cell.label));
+    const lineHeight =
+      dropped || size < CELL_TEXT.size ? size * 1.15 : CELL_TEXT.line;
     ctx.save();
     ctx.globalAlpha = cell.done ? 0.72 : 1;
     ctx.fillStyle = dropped ? (cell.color ?? "#000000") : "#000000";
