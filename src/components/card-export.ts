@@ -204,6 +204,27 @@ const wrap = (
   let line = "";
 
   for (const word of text.split(/\s+/).filter(Boolean)) {
+    // A single word wider than the box has no space to break at, so it is
+    // broken at whatever character fits — matching the screen's
+    // `overflow-wrap: anywhere`, and keeping the export inside its square.
+    if (ctx.measureText(word).width > maxWidth) {
+      if (line) {
+        lines.push(line);
+        line = "";
+      }
+      let piece = "";
+      for (const chr of word) {
+        if (piece && ctx.measureText(piece + chr).width > maxWidth) {
+          lines.push(piece);
+          piece = chr;
+        } else {
+          piece += chr;
+        }
+      }
+      line = piece;
+      continue;
+    }
+
     const candidate = line ? `${line} ${word}` : word;
     if (line && ctx.measureText(candidate).width > maxWidth) {
       lines.push(line);

@@ -286,8 +286,14 @@ export default function BingoCard({
                */
               fontSize: u(dropped ? fitSize(label) : CELL_TEXT.size),
               lineHeight: dropped ? 1.15 : u(CELL_TEXT.line),
+              /*
+               * The size buckets assume text wraps; a single unbroken "word"
+               * has no space to wrap at and would walk straight out of the
+               * square. Break it anywhere, and clip as the hard stop.
+               */
+              overflowWrap: "anywhere",
             }}
-            className="absolute cursor-pointer border-black text-left align-top leading-tight text-black"
+            className="absolute cursor-pointer overflow-hidden border-black text-left align-top leading-tight text-black"
           >
             {/*
               Above the frost, not under it. Even at 12 units the square's type

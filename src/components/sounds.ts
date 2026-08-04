@@ -92,8 +92,9 @@ const CUTS: Record<
   SampleName,
   { offset: number; dur?: number; loopEnd?: number }
 > = {
-  // The tray's mechanical run, out of nearly a minute of session.
-  cdTray: { offset: 2.2, dur: 1.3 },
+  // Tray, motor and settling — four seconds of machine to ride the spin,
+  // out of nearly a minute of session.
+  cdTray: { offset: 2.2, dur: 4.0 },
   // The first full blow; the file holds nine.
   whistle: { offset: 0.25, dur: 1.9 },
   // The longest continuous scribble, looped.
@@ -454,8 +455,12 @@ export const sfx = {
     tone({ freq: 1300, dur: 0.04, gain: 0.06, delay: 0.09 });
   },
 
-  /** The disc winding up. Its landing chime lives with the disc itself. */
+  /**
+   * The disc spinning: the CD player recording, riding the whole spin. Its
+   * landing chime lives with the disc itself.
+   */
   whirr: () => {
+    if (playSample("cdTray", { gain: 2.2 })) return;
     scrub({ from: 320, to: 1500, dur: 0.4, gain: 0.07 });
   },
 
@@ -481,9 +486,4 @@ export const sfx = {
     sampleFriction("eraser", 1.6) ??
     friction({ low: 260, high: 760, gain: 0.1, q: 1.3, squeak: 1050 }),
 
-  /** The disc sliding in or out — an actual CD tray, quietly recorded. */
-  cdTray: () => {
-    if (playSample("cdTray", { gain: 2.2 })) return;
-    tone({ freq: 280, to: 540, dur: 0.09, gain: 0.11 });
-  },
 };

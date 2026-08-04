@@ -803,7 +803,7 @@ export default function Workspace() {
           tasks={tasks}
           mobile={mobile}
           onClose={() => {
-            sfx.cdTray();
+            sfx.pop(false);
             setBoard("bingo");
           }}
           onPriority={(task) => {
@@ -842,7 +842,7 @@ export default function Workspace() {
           // disc replaces the card in place rather than opening over it, and
           // picking the to-do list brings the card back.
           if (tool === "Circle it back") {
-            sfx.cdTray();
+            sfx.pop(true);
             setBoard("disc");
             setOpenTool(null);
             return;
