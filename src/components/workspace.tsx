@@ -822,9 +822,18 @@ export default function Workspace() {
         <SaveAs
           art={collectArt}
           name={name}
-          style={mobile ? { bottom: SHEET_BOTTOM } : undefined}
+          style={
+            mobile
+              ? ({
+                  bottom: SHEET_BOTTOM,
+                  // A notch smaller than the page scale; the full-size button
+                  // crowded the wordmark on a phone.
+                  "--s": "calc(100cqh / 1117 * 0.72)",
+                } as React.CSSProperties)
+              : undefined
+          }
           className={
-            mobile ? "right-[5%] z-40" : "right-[3.7%] top-[88.6%] z-40"
+            mobile ? "right-[2.5%] z-40" : "right-[3.7%] top-[88.6%] z-40"
           }
         />
       ) : null}
