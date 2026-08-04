@@ -203,15 +203,19 @@ export default function TodoListPopup({
     setCarry(null);
 
     const travel = event.clientY - rowStart.current.py;
-    // Round to the nearest slot by pitch — symmetric whether dragging up or
-    // down, unlike scanning for the first centre past the pointer.
-    const target = Math.min(
-      Math.max(
-        rowStart.current.index + Math.round(travel / pitch),
-        0,
-      ),
-      slots.current.length - 1,
-    );
+    // The nearest slot centre to where the row's own centre now is. Measured
+    // against the real centres rather than a uniform pitch, because a row
+    // that wrapped to two lines makes the pitch a lie.
+    const want = slots.current[rowStart.current.index] + travel;
+    let target = 0;
+    let nearest = Infinity;
+    slots.current.forEach((centre, i) => {
+      const gap = Math.abs(centre - want);
+      if (gap < nearest) {
+        nearest = gap;
+        target = i;
+      }
+    });
 
     setLiftY(travel);
     setDropIndex(target);
@@ -421,7 +425,7 @@ export default function TodoListPopup({
             height: s(40),
             borderRadius: s(12),
             paddingInline: s(14),
-            fontSize: s(14),
+            fontSize: s(16),
             boxShadow: `0 ${s(1)} ${s(2.3)} rgba(0,0,0,0.25)`,
           }}
           className="border border-black/10 bg-white text-left text-black placeholder:text-black/70 focus:outline-none"
@@ -464,7 +468,7 @@ export default function TodoListPopup({
               onPointerUp={endRowDrag}
               onPointerCancel={endRowDrag}
               style={{
-                height: s(46),
+                minHeight: s(46),
                 borderRadius: s(12),
                 padding: s(12),
                 backgroundColor: task.color,
@@ -516,15 +520,17 @@ export default function TodoListPopup({
                         if (event.key === "Enter") commitEdit();
                         if (event.key === "Escape") setEditingId(null);
                       }}
-                      style={{ fontSize: s(14), lineHeight: s(17) }}
+                      style={{ fontSize: s(16), lineHeight: s(19) }}
                       // Transparent and unpadded so the row colour carries
                       // through and the text does not shift on entering edit.
                       className="w-full min-w-0 bg-transparent text-black focus:outline-none"
                     />
                   ) : (
                     <span
-                      style={{ fontSize: s(14), lineHeight: s(17) }}
-                      className="block truncate text-black"
+                      style={{ fontSize: s(16), lineHeight: s(19) }}
+                      // Two compact lines, then an ellipsis — a long task
+                      // stays readable without one row swallowing the list.
+                      className="line-clamp-2 text-black"
                     >
                       {task.label}
                     </span>
