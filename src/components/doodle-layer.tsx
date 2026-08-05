@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 
 import {
+  atAspect,
   renderStroke,
   shapePoints,
   TOOL_ICONS,
@@ -131,6 +132,23 @@ export default function DoodleLayer({
   /** The stroke's friction voice, and where the hand last was for its speed. */
   const rub = useRef<Friction | null>(null);
   const rubLast = useRef<{ x: number; y: number; t: number } | null>(null);
+  /**
+   * The page's live width/height ratio. New strokes are stamped with it and
+   * old ones re-fitted against it, so a drawing keeps its shape when the same
+   * board is opened on a differently-shaped window — see `atAspect`.
+   */
+  const [aspect, setAspect] = useState(0);
+
+  useEffect(() => {
+    const el = surface.current;
+    if (!el) return;
+    const watch = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      if (height > 0) setAspect(width / height);
+    });
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, []);
   const maskId = useId();
 
   /**
@@ -263,6 +281,7 @@ export default function DoodleLayer({
             id: nextId.current,
             points: built.points,
             closed: built.closed,
+            aspect,
             ...pen,
           },
         ]);
@@ -271,13 +290,13 @@ export default function DoodleLayer({
       nextId.current += 1;
       setDoodles((current) => [
         ...current,
-        { ...eraserStroke(drawing, pen.eraser), id: nextId.current },
+        { ...eraserStroke(drawing, pen.eraser), id: nextId.current, aspect },
       ]);
     } else if (tool === "pencil" && drawing && drawing.length > 0) {
       nextId.current += 1;
       setDoodles((current) => [
         ...current,
-        { id: nextId.current, points: drawing, ...pen },
+        { id: nextId.current, points: drawing, aspect, ...pen },
       ]);
     }
 
@@ -300,7 +319,9 @@ export default function DoodleLayer({
           }
         : null;
 
-  const all = [...doodles, ...(live ? [live] : [])];
+  // Saved strokes are re-fitted to the page's current shape; the live stroke
+  // is already in it.
+  const all = [...doodles.map((d) => atAspect(d, aspect)), ...(live ? [live] : [])];
   const ink = all.filter((d) => !d.erase);
   const cuts = all.filter((d) => d.erase);
 

@@ -1,5 +1,5 @@
 import { EMPTY_CELL, fitSize, withAlpha, type BoardCell } from "./board";
-import { renderStroke, type Doodle } from "./doodle-brushes";
+import { atAspect, renderStroke, type Doodle } from "./doodle-brushes";
 import { ARTBOARD_HEIGHT } from "./figma-scale";
 import { noteFont, type Note } from "./note-fonts";
 import { type Placed } from "./placed-sticker";
@@ -114,7 +114,8 @@ async function drawOverlay(
     if (lc) {
       const paint = (list: Doodle[]) =>
         list.forEach((doodle) =>
-          renderStroke(doodle, page.w, page.h).forEach((path) => {
+          // Re-fitted to the page being exported, exactly as on screen.
+          renderStroke(atAspect(doodle, page.w / page.h), page.w, page.h).forEach((path) => {
             lc.globalAlpha = path.opacity;
             lc.fillStyle = doodle.color;
             // Outlines are filled, not stroked: that is what carries the width

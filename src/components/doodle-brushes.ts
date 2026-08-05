@@ -71,6 +71,30 @@ export type Doodle = {
    * place in the stack — erasing only affects what was already underneath it.
    */
   erase?: boolean;
+  /** Width/height of the page this was drawn on — see `atAspect`. */
+  aspect?: number;
+};
+
+/**
+ * Re-fits a stroke to the page shape it is being viewed on.
+ *
+ * Points are fractions of the page, so a page that changes shape stretches
+ * the drawing with it: a circle drawn on a phone came back as a wide ellipse
+ * in a desktop window. Each stroke records the aspect it was drawn at; viewed
+ * at any other, its x coordinates are corrected around the page's centre so
+ * the drawn shape survives. Everything drawn at the same aspect shares one
+ * correction, which keeps eraser cuts aligned with the ink they erased.
+ * Strokes from before this field existed render as they always did.
+ */
+export const atAspect = (doodle: Doodle, aspect: number): Doodle => {
+  if (!doodle.aspect || !aspect || Math.abs(doodle.aspect - aspect) < 0.005) {
+    return doodle;
+  }
+  const k = doodle.aspect / aspect;
+  return {
+    ...doodle,
+    points: doodle.points.map((p) => ({ ...p, x: 0.5 + (p.x - 0.5) * k })),
+  };
 };
 
 type Spec = {
