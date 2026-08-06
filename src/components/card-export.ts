@@ -96,10 +96,7 @@ async function drawOverlay(
   });
 
   // --- ink -----------------------------------------------------------------
-  const ink = overlay.doodles.filter((d) => !d.erase);
-  const cuts = overlay.doodles.filter((d) => d.erase);
-
-  if (ink.length) {
+  if (overlay.doodles.some((d) => !d.erase)) {
     /*
      * Drawn into a scratch layer first so the eraser can be applied as
      * `destination-out` before any of it touches the card. Rubbing directly on
@@ -112,21 +109,26 @@ async function drawOverlay(
     const lc = layer.getContext("2d");
 
     if (lc) {
-      const paint = (list: Doodle[]) =>
-        list.forEach((doodle) =>
-          // Re-fitted to the page being exported, exactly as on screen.
-          renderStroke(atAspect(doodle, page.w / page.h), page.w, page.h).forEach((path) => {
+      /*
+       * Walked in stack order, so an eraser pass only lifts the ink already
+       * painted when it happened — a stroke drawn after it stays whole,
+       * exactly as on screen.
+       */
+      overlay.doodles.forEach((doodle) => {
+        lc.globalCompositeOperation = doodle.erase
+          ? "destination-out"
+          : "source-over";
+        // Re-fitted to the page being exported, exactly as on screen.
+        renderStroke(atAspect(doodle, page.w / page.h), page.w, page.h).forEach(
+          (path) => {
             lc.globalAlpha = path.opacity;
             lc.fillStyle = doodle.color;
-            // Outlines are filled, not stroked: that is what carries the width
-            // variation the brush engine produces.
+            // Outlines are filled, not stroked: that is what carries the
+            // width variation the brush engine produces.
             lc.fill(new Path2D(path.d));
-          }),
+          },
         );
-
-      paint(ink);
-      lc.globalCompositeOperation = "destination-out";
-      paint(cuts);
+      });
 
       ctx.save();
       project();

@@ -322,8 +322,26 @@ export default function DoodleLayer({
   // Saved strokes are re-fitted to the page's current shape; the live stroke
   // is already in it.
   const all = [...doodles.map((d) => atAspect(d, aspect)), ...(live ? [live] : [])];
-  const ink = all.filter((d) => !d.erase);
-  const cuts = all.filter((d) => d.erase);
+
+  /*
+   * Ink is grouped by how many eraser passes come after it in the stack. An
+   * eraser pass only lifts what was already on the page when it happened, so
+   * a stroke drawn afterwards must not be hidden by it — each group is
+   * therefore masked only by the cuts later than itself. One shared mask
+   * used to erase everything ever drawn: new ink silently vanished wherever
+   * the eraser had once been.
+   */
+  const cuts: Doodle[] = [];
+  const groups: { afterCuts: number; ink: Doodle[] }[] = [];
+  all.forEach((doodle) => {
+    if (doodle.erase) {
+      cuts.push(doodle);
+      return;
+    }
+    const open = groups.at(-1);
+    if (open && open.afterCuts === cuts.length) open.ink.push(doodle);
+    else groups.push({ afterCuts: cuts.length, ink: [doodle] });
+  });
 
   const cursor =
     tool === "pencil"
@@ -365,31 +383,51 @@ export default function DoodleLayer({
       }`}
     >
       <defs>
-        {/* White shows the ink through; the eraser's black hides it. */}
-        <mask id={maskId} maskUnits="userSpaceOnUse">
-          <rect x="0" y="0" width={VIEW_W} height={VIEW_H} fill="#fff" />
-          {cuts.map((cut) =>
-            renderStroke(cut, VIEW_W, VIEW_H).map((path, i) => (
-              <path key={`${cut.id}-${i}`} d={path.d} fill="#000" />
-            )),
-          )}
-        </mask>
+        {/* White shows the ink through; the eraser's black hides it. One
+            mask per ink group, holding only the cuts made after that ink. */}
+        {groups.map((group) => {
+          const later = cuts.slice(group.afterCuts);
+          if (!later.length) return null;
+          return (
+            <mask
+              key={group.afterCuts}
+              id={`${maskId}-${group.afterCuts}`}
+              maskUnits="userSpaceOnUse"
+            >
+              <rect x="0" y="0" width={VIEW_W} height={VIEW_H} fill="#fff" />
+              {later.map((cut) =>
+                renderStroke(cut, VIEW_W, VIEW_H).map((path, i) => (
+                  <path key={`${cut.id}-${i}`} d={path.d} fill="#000" />
+                )),
+              )}
+            </mask>
+          );
+        })}
       </defs>
 
-      <g mask={`url(#${maskId})`}>
-        {ink.map((doodle) =>
-          renderStroke(doodle, VIEW_W, VIEW_H).map((path, i) => (
-            <path
-              key={`${doodle.id}-${i}`}
-              d={path.d}
-              // Outlines are filled, not stroked: that is what carries the width
-              // variation the brush engine produces.
-              fill={doodle.color}
-              fillOpacity={path.opacity}
-            />
-          )),
-        )}
-      </g>
+      {groups.map((group) => (
+        <g
+          key={group.afterCuts}
+          mask={
+            cuts.length > group.afterCuts
+              ? `url(#${maskId}-${group.afterCuts})`
+              : undefined
+          }
+        >
+          {group.ink.map((doodle) =>
+            renderStroke(doodle, VIEW_W, VIEW_H).map((path, i) => (
+              <path
+                key={`${doodle.id}-${i}`}
+                d={path.d}
+                // Outlines are filled, not stroked: that is what carries the
+                // width variation the brush engine produces.
+                fill={doodle.color}
+                fillOpacity={path.opacity}
+              />
+            )),
+          )}
+        </g>
+      ))}
 
       {/*
         The eraser's reach, drawn where the pointer is. Resizing is invisible
