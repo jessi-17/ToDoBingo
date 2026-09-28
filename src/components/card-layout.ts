@@ -16,7 +16,7 @@
  * and opacity. They are what stop the card reading as flat vector shapes, so
  * both renderers reproduce them rather than approximating:
  *
- *   green frame  linear-burn @ 31%   over the lime card
+ *   green frame  linear-burn @ 31%   over the card body
  *   pink frame   overlay     @ 41%   over the pink panel
  *   grain x4     overlay     @ 18%   scattered inside the pink panel
  *   letter tile  exclusion   @ 18%   inside each BINGO tile
@@ -24,9 +24,7 @@
 export const CARD_W = 645;
 export const CARD_H = 803;
 
-export const CARD_BG = "#e0f380";
-export const PANEL_BG = "#fdaaf8";
-export const TILE_BG = "#93d1fc";
+// The card, panel and tile fills belong to the theme — see ./card-themes.
 export const INK = "#3d0e26";
 
 /** Grid: 25 cells of 103 at ~105.4 pitch, starting at 60,195 on the card. */

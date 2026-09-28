@@ -2,7 +2,6 @@
 
 import { EMPTY_CELL, fitSize, withAlpha, type BoardCell } from "./board";
 import {
-  CARD_BG,
   CARD_H,
   CARD_W,
   CELL_TEXT,
@@ -12,16 +11,15 @@ import {
   LETTERS,
   OVERLAY,
   PANEL,
-  PANEL_BG,
   SCRIBBLE,
   SCRIBBLE_MS,
   SCRIBBLE_WIDTH,
   SPARKS,
   STICKERS,
   TILE,
-  TILE_BG,
   TITLE,
 } from "./card-layout";
+import { cardTheme } from "./card-themes";
 import { STAR_SHAPES } from "./star-shapes";
 
 /**
@@ -107,6 +105,8 @@ export default function BingoCard({
   onTitleChange,
   onFooterChange,
   onToggleCell,
+  theme,
+  children,
   style,
   className = "",
 }: {
@@ -122,6 +122,13 @@ export default function BingoCard({
   onTitleChange?: (next: string) => void;
   onFooterChange?: (next: string) => void;
   onToggleCell?: (index: number) => void;
+  /** Which colourway to paint; see ./card-themes. */
+  theme?: string;
+  /**
+   * Screen-only controls laid over the card. The export is painted from data,
+   * not from this DOM, so nothing put here can leak into the saved image.
+   */
+  children?: React.ReactNode;
   /** Set `--bu` here — one design pixel, in whatever unit the parent works in. */
   style?: React.CSSProperties;
   className?: string;
@@ -129,6 +136,7 @@ export default function BingoCard({
   // One design pixel, as a length. The parent sets --bu from the space it has,
   // so the whole card scales by CSS alone and every ratio in the design holds.
   const u = (n: number) => `calc(${n} * var(--bu, 1px))`;
+  const palette = cardTheme(theme);
 
   return (
     <div
@@ -136,11 +144,11 @@ export default function BingoCard({
         ...style,
         width: u(CARD_W),
         height: u(CARD_H),
-        backgroundColor: CARD_BG,
+        backgroundColor: palette.card,
         fontFamily: "var(--font-display)",
       }}
       data-card
-      className={`relative overflow-hidden ${className}`}
+      className={`relative overflow-hidden transition-colors duration-500 ${className}`}
     >
       {/*
         Card texture. Figma specifies Linear Burn, which CSS does not have —
@@ -180,12 +188,12 @@ export default function BingoCard({
             top: u(TILE.y),
             width: u(letter.w),
             height: u(TILE.h),
-            backgroundColor: TILE_BG,
+            backgroundColor: palette.tile,
             borderWidth: HAIRLINE,
             // Rounded at the top only — the bottom tucks behind the pink panel.
             borderRadius: `${u(16)} ${u(16)} 0 0`,
           }}
-          className="absolute overflow-hidden border-black"
+          className="absolute overflow-hidden border-black transition-colors duration-500"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -223,10 +231,10 @@ export default function BingoCard({
           width: u(PANEL.w),
           height: u(PANEL.h),
           borderRadius: u(PANEL.r),
-          backgroundColor: PANEL_BG,
+          backgroundColor: palette.panel,
           borderWidth: HAIRLINE,
         }}
-        className="absolute overflow-hidden border-black"
+        className="absolute overflow-hidden border-black transition-colors duration-500"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -464,6 +472,7 @@ export default function BingoCard({
         );
       })}
 
+      {children}
     </div>
   );
 }

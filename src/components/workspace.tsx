@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import BingoCard from "./bingo-card";
+import { shuffleTheme, type ThemeId } from "./card-themes";
 import CircleItBack from "./circle-it-back";
 import Confetti from "./confetti";
 import Cross from "./cross";
@@ -44,6 +45,7 @@ import { type Sticker } from "./sticker-manifest";
 import { importStickers } from "./sticker-upload";
 import { type Task } from "./tasks";
 import TextNote from "./text-note";
+import { ThemeShuffle } from "./theme-picker";
 import TodoListPopup from "./todo-list-popup";
 import { useMobileLayout } from "./use-mobile";
 import Wordmark from "./wordmark";
@@ -146,6 +148,11 @@ export default function Workspace() {
   const setCardTitle = docField("title");
   const cardFooter = doc.footer;
   const setCardFooter = docField("footer");
+  /** The card's colourway — shuffled from the card, or picked in the profile. */
+  const setTheme = (next: ThemeId) => {
+    sfx.sparkle(3);
+    docField("theme")(next);
+  };
   /**
    * The right-hand slot holds one board at a time. "Circle it back" swaps the
    * disc in rather than opening a panel over it; picking the to-do list brings
@@ -215,6 +222,8 @@ export default function Workspace() {
         // The list itself carries over: the tasks are yours, not the card's.
         tasks: finished.tasks.map((task) => ({ ...task, done: false })),
         uploads: finished.uploads,
+        // So is the look you picked; a fresh card should not snap back to lime.
+        theme: finished.theme,
       },
       archive: [
         {
@@ -393,6 +402,7 @@ export default function Workspace() {
       cells,
       title: cardTitle,
       footer: cardFooter,
+      theme: doc.theme,
       overlay:
         card && page
           ? {
@@ -778,6 +788,7 @@ export default function Workspace() {
           onTitleChange={setCardTitle}
           onFooterChange={setCardFooter}
           onToggleCell={toggleCell}
+          theme={doc.theme}
           style={
             mobile
               ? // Sized from the width so the card leads the page, leaving the
@@ -797,7 +808,9 @@ export default function Workspace() {
               ? "left-1/2 -translate-x-1/2"
               : "left-[62%] top-1/2 -translate-y-1/2"
           }`}
-        />
+        >
+          <ThemeShuffle onShuffle={() => setTheme(shuffleTheme(doc.theme))} />
+        </BingoCard>
       ) : (
         <CircleItBack
           tasks={tasks}
@@ -1013,6 +1026,8 @@ export default function Workspace() {
         <ProfilePanel
           name={name}
           onRename={storeName}
+          theme={doc.theme}
+          onTheme={setTheme}
           stats={{
             // Two of these are about this card, two are about you: how much of
             // the board is filled and how many lines it has are properties of
@@ -1044,6 +1059,7 @@ export default function Workspace() {
               cells: resolveCells(card.doc.squares, card.doc.tasks, card.doc.freeMarks),
               title: card.doc.title,
               footer: card.doc.footer,
+              theme: card.doc.theme,
             });
             download(
               await toBlob(canvas),

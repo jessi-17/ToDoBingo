@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 
 import { type Slot } from "./board";
+import { DEFAULT_THEME, type ThemeId } from "./card-themes";
 import { type Doodle } from "./doodle-brushes";
 import { type Note, type NoteFontId } from "./note-fonts";
 import { type Placed } from "./placed-sticker";
@@ -46,6 +47,8 @@ export type BoardDoc = {
   notes: Note[];
   /** The user's own sticker images, as data URLs. */
   uploads: Sticker[];
+  /** The card's colourway, kept with the card so a finished one keeps its look. */
+  theme: ThemeId;
 };
 
 /** A card put away, with a picture of it so the list is worth looking at. */
@@ -88,6 +91,7 @@ export const EMPTY_DOC: BoardDoc = {
   stickers: [],
   notes: [],
   uploads: [],
+  theme: DEFAULT_THEME,
 };
 
 const EMPTY: Saved = {

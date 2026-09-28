@@ -14,7 +14,9 @@ import {
   SHEET_BOTTOM,
   sheetScaleVars,
 } from "./figma-scale";
+import { type ThemeId } from "./card-themes";
 import { setMuted, sfx, useMuted } from "./sounds";
+import { ThemePicker } from "./theme-picker";
 
 /**
  * Profile — who you are, how you are doing, and the cards you have finished.
@@ -48,6 +50,8 @@ const stat = (label: string, value: number | string) => (
 export default function ProfilePanel({
   name,
   onRename,
+  theme,
+  onTheme,
   stats,
   archive,
   canFinish,
@@ -61,6 +65,9 @@ export default function ProfilePanel({
 }: {
   name: string | null | undefined;
   onRename: (next: string) => void;
+  /** The current card's colourway. */
+  theme: string;
+  onTheme: (next: ThemeId) => void;
   stats: { tasksDone: number; lines: number; filled: number; finished: number };
   archive: ArchivedCard[];
   /** False when the current card is blank — nothing to put away. */
@@ -162,6 +169,8 @@ export default function ProfilePanel({
           className="border border-black/10 bg-white uppercase tracking-[0.14em] text-black focus:outline-none focus:ring-1 focus:ring-[#9d3124]"
         />
       </div>
+
+      <ThemePicker value={theme} onChange={onTheme} />
 
       <div style={{ columnGap: s(8) }} className="flex">
         {stat("done", stats.tasksDone)}

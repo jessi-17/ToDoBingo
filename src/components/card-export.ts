@@ -4,7 +4,6 @@ import { ARTBOARD_HEIGHT } from "./figma-scale";
 import { noteFont, type Note } from "./note-fonts";
 import { type Placed } from "./placed-sticker";
 import {
-  CARD_BG,
   CARD_H,
   CARD_W,
   CELL_TEXT,
@@ -15,15 +14,14 @@ import {
   LETTERS,
   OVERLAY,
   PANEL,
-  PANEL_BG,
   SCRIBBLE,
   SCRIBBLE_WIDTH,
   SPARKS,
   STICKERS,
   TILE,
-  TILE_BG,
   TITLE,
 } from "./card-layout";
+import { cardTheme } from "./card-themes";
 import { STAR_SHAPES } from "./star-shapes";
 
 /**
@@ -295,6 +293,8 @@ export type CardArt = {
   cells: BoardCell[];
   title: string;
   footer: string;
+  /** Colourway id; the original when absent. */
+  theme?: string;
   overlay?: OverlayArt;
 };
 
@@ -327,11 +327,12 @@ export async function renderCard(art: CardArt, scale = 2) {
   const letters = art_.slice(0, LETTERS.length);
   const stickers = art_.slice(LETTERS.length);
 
+  const palette = cardTheme(art.theme);
   const display = family("var(--font-display)", "Georgia, serif");
   const mono = family("var(--font-mono-card)", "monospace");
 
   // --- card body -----------------------------------------------------------
-  ctx.fillStyle = CARD_BG;
+  ctx.fillStyle = palette.card;
   ctx.fillRect(0, 0, CARD_W, CARD_H);
 
   // Figma specifies Linear Burn, which CSS and canvas both lack; multiply is
@@ -355,7 +356,7 @@ export async function renderCard(art: CardArt, scale = 2) {
     ctx.save();
     // Rounded at the top only — the bottom tucks behind the pink panel.
     roundRect(ctx, letter.x, TILE.y, letter.w, TILE.h, [16, 16, 0, 0]);
-    ctx.fillStyle = TILE_BG;
+    ctx.fillStyle = palette.tile;
     ctx.fill();
     ctx.clip();
 
@@ -384,7 +385,7 @@ export async function renderCard(art: CardArt, scale = 2) {
   // --- pink panel ----------------------------------------------------------
   ctx.save();
   roundRect(ctx, PANEL.x, PANEL.y, PANEL.w, PANEL.h, PANEL.r);
-  ctx.fillStyle = PANEL_BG;
+  ctx.fillStyle = palette.panel;
   ctx.fill();
   ctx.clip();
   blend(ctx, pink, "overlay", OVERLAY.pink.alpha, (image) =>
